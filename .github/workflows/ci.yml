@@ -9,5 +9,25 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install numpy pytest
-      - run: python -c "from orchestrator.workflow import WorkflowEngine, Task; e=WorkflowEngine(); e.add_task(Task('a',lambda: 42,{})); e.add_task(Task('b',lambda a: a*2,{},depends_on=['a'])); r=e.run(); assert r['b'].output==84; print('workflow OK')"
+      - name: Test workflow engine
+        run: |
+          python - <<'PYEOF'
+          from orchestrator.workflow import WorkflowEngine, Task
+          engine = WorkflowEngine()
+          engine.add_task(Task('a', lambda: 42, dict()))
+          engine.add_task(Task('b', lambda a: a * 2, dict(), depends_on=['a']))
+          results = engine.run()
+          assert results['b'].output == 84
+          print('workflow engine OK')
+          PYEOF
+      - name: Test DAG builder
+        run: |
+          python - <<'PYEOF'
+          from dag.dag_builder import DAGBuilder
+          builder = DAGBuilder()
+          builder.add('double', lambda n: n * 2, inputs=dict(n=5))
+          results = builder.run()
+          assert results['double'].output == 10
+          print('dag builder OK')
+          PYEOF
       - run: python run_workflow.py --workflow demo
