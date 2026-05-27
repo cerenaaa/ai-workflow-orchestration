@@ -1,0 +1,18 @@
+name: CI
+"on":
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install numpy pytest
+      - run: python -c "from orchestrator.workflow import WorkflowEngine, Task; e=WorkflowEngine(); e.add_task(Task('a',lambda: 42,{})); e.add_task(Task('b',lambda a: a*2,{},depends_on=['a'])); r=e.run(); assert r['b'].output==84; print('workflow OK')"
+      - run: python -c "from dag.dag_builder import DAGBuilder; b=DAGBuilder().add('x',lambda n: n*2,{'n':5}); r=b.run(); assert r['x'].output==10; print('dag builder OK')"
+      - run: python run_workflow.py --workflow demo
